@@ -61,16 +61,16 @@ Both tools support the following command-line options:
 
 ```bash
 # Enable debug logging
-python jira-create.py --debug
-python jira-list.py --debug
+python jira_create.py --debug
+python jira_list.py --debug
 
 # Disable SSL certificate verification (useful for self-signed certificates)
-python jira-create.py --no-verify-ssl
-python jira-list.py --no-verify-ssl
+python jira_create.py --no-verify-ssl
+python jira_list.py --no-verify-ssl
 
 # Override Jira URL from environment
-python jira-create.py --jira-url https://your-custom-jira-instance.com
-python jira-list.py --jira-url https://your-custom-jira-instance.com
+python jira_create.py --jira-url https://your-custom-jira-instance.com
+python jira_list.py --jira-url https://your-custom-jira-instance.com
 
 ```
 
@@ -79,7 +79,7 @@ python jira-list.py --jira-url https://your-custom-jira-instance.com
 Run the issue creation tool:
 
 ```bash
-python jira-create.py
+python jira_create.py
 ```
 
 The interactive CLI will guide you through:
@@ -93,7 +93,7 @@ The interactive CLI will guide you through:
 Search and list existing issues:
 
 ```bash
-python jira-list.py
+python jira_list.py
 ```
 
 Filter options include:
@@ -128,8 +128,8 @@ Status: (leave blank)
 
 ```
 cli2jira/
-├── jira-create.py    # Issue creation CLI
-├── jira-list.py      # Issue search/listing CLI
+├── jira_create.py    # Issue creation CLI
+├── jira_list.py      # Issue search/listing CLI
 ├── auth.py           # Authentication and credential management
 ├── jira_api.py       # Jira API wrapper functions
 ├── requirements.txt  # Python dependencies
@@ -140,8 +140,8 @@ cli2jira/
 
 - **`auth.py`**: Handles authentication setup, credential storage, and environment configuration
 - **`jira_api.py`**: Contains API wrapper functions for making requests to Jira REST API
-- **`jira-create.py`**: Interactive CLI for creating new Jira issues
-- **`jira-list.py`**: Interactive CLI for searching and listing existing issues
+- **`jira_create.py`**: Interactive CLI for creating new Jira issues
+- **`jira_list.py`**: Interactive CLI for searching and listing existing issues
 
 ## 🐛 Troubleshooting
 

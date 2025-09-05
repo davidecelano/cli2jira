@@ -2,12 +2,13 @@ import os
 import sys
 import requests
 import logging
-import getpass
-import platform
 import argparse
 from typing import cast
 from auth import setup_environment
 from jira_api import search_issues
+from utils import (Colors, print_success, print_info, print_warning, print_error,
+                   show_progress, select_from_string_list, get_field_input, setup_logging)
+from exceptions import JiraError, JiraAuthError, JiraConnectionError, JiraAPIError
 
 def parse_arguments():
     """Parse command line arguments."""
@@ -21,82 +22,7 @@ def parse_arguments():
 args = parse_arguments()
 
 # Configure logging based on debug flag
-if args.debug:
-    logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
-else:
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-
-# ANSI color codes for better UX
-class Colors:
-    GREEN = '\033[92m'
-    BLUE = '\033[94m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    END = '\033[0m'
-
-def print_success(message: str):
-    """Print success message in green."""
-    print(f"{Colors.GREEN}✓ {message}{Colors.END}")
-
-def print_info(message: str):
-    """Print info message in blue."""
-    print(f"{Colors.BLUE}ℹ {message}{Colors.END}")
-
-def print_warning(message: str):
-    """Print warning message in yellow."""
-    print(f"{Colors.YELLOW}⚠ {message}{Colors.END}")
-
-def print_error(message: str):
-    """Print error message in red."""
-    print(f"{Colors.RED}✗ {message}{Colors.END}")
-
-def show_progress(message: str, duration: float = 1.0):
-    """Show a simple progress indicator."""
-    print(f"{Colors.BLUE}{message}...{Colors.END}", end='', flush=True)
-    import time
-    time.sleep(duration)
-    print(f"\r{Colors.GREEN}✓ {message} completed{Colors.END}")
-
-# --- Main Application Logic ---
-
-def select_from_list(options: list, prompt: str, allow_quit: bool = True) -> str:
-    """Enhanced selection from a list with better formatting and quit option."""
-    print(f"\n{Colors.BOLD}{prompt}{Colors.END}")
-    for i, option in enumerate(options, 1):
-        print(f"  {i}. {option}")
-    if allow_quit:
-        print(f"  0. Quit")
-    
-    while True:
-        try:
-            choice = input(f"\n{Colors.BLUE}Select an option (1-{len(options)}): {Colors.END}").strip()
-            if allow_quit and choice == '0':
-                print_info("Operation cancelled by user.")
-                sys.exit(0)
-            choice_num = int(choice)
-            if 1 <= choice_num <= len(options):
-                return options[choice_num - 1]
-            else:
-                print_error("Invalid selection. Please try again.")
-        except ValueError:
-            print_error("Please enter a valid number.")
-
-def get_field_input(prompt: str, required: bool = False, example: str = "") -> str:
-    """Get user input with validation and retry logic."""
-    while True:
-        if example:
-            full_prompt = f"{Colors.BLUE}{prompt} (e.g., {example}): {Colors.END}"
-        else:
-            full_prompt = f"{Colors.BLUE}{prompt}: {Colors.END}"
-        
-        value = input(full_prompt).strip()
-        
-        if required and not value:
-            print_error("This field is required. Please try again.")
-            continue
-        
-        return value
+setup_logging(args.debug)
 
 def display_issue_results(issues: list):
     """Display search results in a formatted, colorful way."""
@@ -165,7 +91,7 @@ def main():
             "All issues (no user filter)"
         ]
         
-        selected_filter = select_from_list(user_filters, "Select a user filter:")
+        selected_filter = select_from_string_list(user_filters, "Select a user filter:")
         
         if "reported by me" in selected_filter:
             jql_clauses.append("reporter = currentUser()")
@@ -208,12 +134,29 @@ def main():
         else:
             print_error("Could not retrieve issues. Please check your connection and credentials.")
             
+    except JiraAuthError as e:
+        print_error(f"Authentication failed: {e}")
+        print_info("Please check your Jira token and try again.")
+        if args.debug:
+            logging.error(f"Auth error details: {e}", exc_info=True)
+    except JiraConnectionError as e:
+        print_error(f"Connection failed: {e}")
+        print_info("Please check your internet connection and Jira URL.")
+        if args.debug:
+            logging.error(f"Connection error details: {e}", exc_info=True)
+    except JiraAPIError as e:
+        print_error(f"Jira API error: {e}")
+        print_info("Please check your permissions and the search criteria.")
+        if args.debug:
+            logging.error(f"API error details: {e}", exc_info=True)
     except KeyboardInterrupt:
         print(f"\n{Colors.YELLOW}⚠ Operation cancelled by user.{Colors.END}")
         sys.exit(0)
     except Exception as e:
-        print_error(f"An unexpected error occurred: {str(e)}")
-        logging.error(f"Unexpected error: {e}", exc_info=True)
+        print_error(f"An unexpected error occurred: {e}")
+        print_info("Please check your configuration and try again.")
+        if args.debug:
+            logging.error(f"Unexpected error: {e}", exc_info=True)
         sys.exit(1)
 
 if __name__ == "__main__":
